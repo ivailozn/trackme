@@ -32,4 +32,30 @@
         android:orderInCategory="100"
         android:title="Fill Demo Data"
         app:showAsAction="never"/>
+     
+      <item
+        android:id="@+id/action_fillDemoLapData"
+        android:orderInCategory="100"
+        android:title="Fill Demo LapData"
+        app:showAsAction="never"/>
+     
+     <item
+        android:id="@+id/action_mapType"
+        android:orderInCategory="100"
+        android:title="Map Type"
+        app:showAsAction="never"/>
+     
+     <item
+        android:id="@+id/action_markerType"
+        android:orderInCategory="100"
+        android:title="Marker Type"
+        app:showAsAction="never"/>
+     
+     
+     <item
+        android:id="@+id/action_calculateLaps"
+        android:orderInCategory="100"
+        android:title="Calculate Laps"
+        app:showAsAction="never"/>
+     
 </menu>

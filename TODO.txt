@@ -1,0 +1,1 @@
+add start/stop point to measure laps or calculate maps (also sectors)

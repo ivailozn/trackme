@@ -20,6 +20,7 @@ import android.location.LocationManager;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
+import android.preference.PreferenceManager;
 import android.provider.Settings;
 import android.support.v7.app.ActionBarActivity;
 import android.util.Log;
@@ -30,12 +31,18 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.google.android.gms.maps.GoogleMap;
+import com.google.android.gms.maps.GoogleMap.OnMapLongClickListener;
+import com.google.android.gms.maps.GoogleMap.OnMarkerDragListener;
 import com.google.android.gms.maps.SupportMapFragment;
+import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 
-public class MainActivity extends ActionBarActivity implements LocationListener {
+public class MainActivity extends ActionBarActivity implements LocationListener, OnMapLongClickListener {
 
+	private static final String KEY_MAP_TYPE = "KEY_MAP_TYPE";
+	private static final String KEY_MARKER_TYPE = "KEY_MARKER_TYPE";
 	private static LocationManager locationManager;
 	private static String provider;
 
@@ -49,6 +56,15 @@ public class MainActivity extends ActionBarActivity implements LocationListener 
 	private static TextView elements;
 
 	private GoogleMap mMap;
+	private int markerType; 
+	
+	
+	// market counter
+	int marketCounter = 0;
+	
+	// start/stop marker, region markers. Always M0 is the start stop marker.
+	private ArrayList<MarkerOptions> markers = new ArrayList<MarkerOptions>();
+	int lastLoadedLocationsKeyIndex;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -109,8 +125,25 @@ public class MainActivity extends ActionBarActivity implements LocationListener 
 		mMap.addMarker(new MarkerOptions().position(new LatLng(43.0827, 25.6337)).title("Hello world"));
 		mMap.addMarker(new MarkerOptions().position(new LatLng(10, 10)).title("Hello world"));
 
+		setMapType(PreferenceManager.getDefaultSharedPreferences(this).getInt(KEY_MAP_TYPE, 3));
+		setMarkerType(PreferenceManager.getDefaultSharedPreferences(this).getInt(KEY_MARKER_TYPE, 0));
+		
+		mMap.setOnMapLongClickListener(this);
 	}
 
+	public MarkerOptions getMarker(double lat, double lng, String title, int markerType) {
+		MarkerOptions mo = new MarkerOptions();
+		if(markerType == 0)
+			mo.position(new LatLng(lat, lng)).title(title);
+		else if(markerType == 1) // 32 blue 
+			mo.position(new LatLng(lat, lng)).title(title)
+					.icon(BitmapDescriptorFactory.fromResource(R.drawable.marker_32_blue));
+		else if(markerType == 2) // 16 blue
+			mo.position(new LatLng(lat, lng)).title(title)
+					.icon(BitmapDescriptorFactory.fromResource(R.drawable.marker_16_blue));		
+		return mo;
+	}
+	
 	@Override
 	public boolean onCreateOptionsMenu(Menu menu) {
 
@@ -145,11 +178,123 @@ public class MainActivity extends ActionBarActivity implements LocationListener 
 			fillDemoData();
 
 			return true;
+		}  else if (id == R.id.action_fillDemoLapData) {
+
+			fillDemoLapData();
+
+			return true;
+		}  else if (id == R.id.action_mapType) {
+
+			setMapType();
+
+			return true;
+		}  else if (id == R.id.action_markerType) {
+
+			setMarkerType();
+
+			return true;
+		} else if (id == R.id.action_calculateLaps) {
+
+			calculateLaps();
+
+			return true;
 		}
 
 		return super.onOptionsItemSelected(item);
 	}
 
+	public void setMarkerType() {
+		// display a list keys
+		ArrayList<String> types = new ArrayList<String>();
+		types.add("Default");
+		types.add("32 Blue");
+		types.add("16 Blue");
+		AlertDialog.Builder builder = new AlertDialog.Builder(this);
+		builder.setTitle("Marker Type").setItems(types.toArray(new String[types.size()]), new DialogInterface.OnClickListener() {
+			public void onClick(DialogInterface dialog, final int which) {
+
+				// display it as overlays with point
+				runOnUiThread(new Runnable() {
+
+					@Override
+					public void run() {
+						try {
+							setMarkerType(which);
+						} catch (Exception e) {
+							e.printStackTrace();
+							Log.w(MainActivity.class.toString(), "\t" + e.getMessage());
+						}
+					}				
+				});
+			}
+		});
+		builder.create();
+		builder.show();
+	}
+	
+	public void setMarkerType(final int which) {
+
+		PreferenceManager.getDefaultSharedPreferences(this).edit().putInt(KEY_MARKER_TYPE, which).commit(); 
+		this.markerType = which;
+	}
+	
+	public void setMapType() {
+		// display a list keys
+		ArrayList<String> types = new ArrayList<String>();
+		types.add("None");
+		types.add("Hybrid");
+		types.add("Normal");
+		types.add("Satallite");
+		types.add("Terrain");
+		AlertDialog.Builder builder = new AlertDialog.Builder(this);
+		builder.setTitle("Map Type").setItems(types.toArray(new String[types.size()]), new DialogInterface.OnClickListener() {
+			public void onClick(DialogInterface dialog, final int which) {
+
+				// display it as overlays with point
+				runOnUiThread(new Runnable() {
+
+					@Override
+					public void run() {
+						try {
+							setMapType(which);
+						} catch (Exception e) {
+							e.printStackTrace();
+							Log.w(MainActivity.class.toString(), "\t" + e.getMessage());
+						}
+					}
+
+				
+				});
+			}
+		});
+		builder.create();
+		builder.show();
+	}
+
+	public void setMapType(final int which) {
+		if(mMap == null) return;
+		PreferenceManager.getDefaultSharedPreferences(this).edit().putInt(KEY_MAP_TYPE, which).commit(); 
+		switch (which) {
+		case 0:
+			mMap.setMapType(GoogleMap.MAP_TYPE_NONE);
+			break;
+		case 1:
+			mMap.setMapType(GoogleMap.MAP_TYPE_HYBRID);
+			break;
+		case 2:
+			mMap.setMapType(GoogleMap.MAP_TYPE_NORMAL);
+			break;
+		case 3:
+			mMap.setMapType(GoogleMap.MAP_TYPE_SATELLITE);
+			break;
+		case 4:
+			mMap.setMapType(GoogleMap.MAP_TYPE_TERRAIN);
+			break;
+		default:
+			break;
+		}
+	}
+	
 	public void fillDemoData() {
 		((App) getApplication()).getModel().getLocationMaps().clear();
 		((App) getApplication()).getModel().setLocations(new ArrayList<MyLocation>());
@@ -197,6 +342,124 @@ public class MainActivity extends ActionBarActivity implements LocationListener 
 			l.setLongitude(25.6337);
 			onLocationChanged(l);
 		}
+
+	}
+	
+	private MyLocation getMyLocation(double lat, double lng, float speed, long time) {
+		Location l = new Location("");
+		l.setLatitude(lat);
+		l.setLongitude(lng);
+		l.setSpeed(speed);
+		l.setTime(time);
+		return new MyLocation(l);
+	}
+	
+	public void fillDemoLapData() {
+		((App) getApplication()).getModel().getLocationMaps().clear();
+		((App) getApplication()).getModel().setLocations(new ArrayList<MyLocation>());
+		String time = null;
+		ArrayList<MyLocation> locations = null;
+		Location l;
+
+		// first object
+		long starTime = System.currentTimeMillis();
+		float speed = 20;
+		time = "" + starTime;
+		locations = new ArrayList<MyLocation>();
+		// lap 1
+		locations.add(getMyLocation(43.0830, 25.6337, speed, starTime += 100));
+		locations.add(getMyLocation(43.0831, 25.6337, speed, starTime += 100));
+		locations.add(getMyLocation(43.0832, 25.6337, speed, starTime += 100));
+		locations.add(getMyLocation(43.0833, 25.6337, speed, starTime += 100));
+		locations.add(getMyLocation(43.0834, 25.6337, speed, starTime += 100));
+
+		locations.add(getMyLocation(43.0835, 25.6338, speed, starTime += 100));
+		locations.add(getMyLocation(43.0835, 25.6339, speed, starTime += 100));
+		locations.add(getMyLocation(43.0835, 25.6340, speed, starTime += 100));
+		locations.add(getMyLocation(43.0835, 25.6341, speed, starTime += 100));
+		locations.add(getMyLocation(43.0835, 25.6342, speed, starTime += 100));
+
+		locations.add(getMyLocation(43.0835, 25.6342, speed, starTime += 100));
+		locations.add(getMyLocation(43.0834, 25.6342, speed, starTime += 100));
+		locations.add(getMyLocation(43.0833, 25.6342, speed, starTime += 100));
+		locations.add(getMyLocation(43.0832, 25.6342, speed, starTime += 100));
+		locations.add(getMyLocation(43.0831, 25.6342, speed, starTime += 100));
+
+		locations.add(getMyLocation(43.0830, 25.6342, speed, starTime += 100));
+		locations.add(getMyLocation(43.0830, 25.6341, speed, starTime += 100));
+		locations.add(getMyLocation(43.0830, 25.6340, speed, starTime += 100));
+		locations.add(getMyLocation(43.0830, 25.6338, speed, starTime += 100));
+		locations.add(getMyLocation(43.0830, 25.6337, speed, starTime += 100));
+
+		// lap 2
+		locations.add(getMyLocation(43.0830, 25.6337, speed, starTime += 100));
+		locations.add(getMyLocation(43.0831, 25.6337, speed, starTime += 100));
+		locations.add(getMyLocation(43.0832, 25.6337, speed, starTime += 100));
+		locations.add(getMyLocation(43.0833, 25.6337, speed, starTime += 100));
+		locations.add(getMyLocation(43.0834, 25.6337, speed, starTime += 100));
+
+		locations.add(getMyLocation(43.0835, 25.6338, speed, starTime += 100));
+		locations.add(getMyLocation(43.0835, 25.6339, speed, starTime += 100));
+		locations.add(getMyLocation(43.0835, 25.6340, speed, starTime += 100));
+		locations.add(getMyLocation(43.0835, 25.6341, speed, starTime += 100));
+		locations.add(getMyLocation(43.0835, 25.6342, speed, starTime += 100));
+
+		locations.add(getMyLocation(43.0835, 25.6342, speed, starTime += 100));
+		locations.add(getMyLocation(43.0834, 25.6342, speed, starTime += 100));
+		locations.add(getMyLocation(43.0833, 25.6342, speed, starTime += 100));
+		locations.add(getMyLocation(43.0832, 25.6342, speed, starTime += 100));
+		locations.add(getMyLocation(43.0831, 25.6342, speed, starTime += 100));
+
+		locations.add(getMyLocation(43.0830, 25.6342, speed, starTime += 100));
+		locations.add(getMyLocation(43.0830, 25.6341, speed, starTime += 100));
+		locations.add(getMyLocation(43.0830, 25.6340, speed, starTime += 100));
+		locations.add(getMyLocation(43.0830, 25.6338, speed, starTime += 100));
+		locations.add(getMyLocation(43.0830, 25.6337, speed, starTime += 100));
+
+		// lap 3
+		locations.add(getMyLocation(43.0830, 25.6337, speed, starTime += 100));
+		locations.add(getMyLocation(43.0831, 25.6337, speed, starTime += 100));
+		locations.add(getMyLocation(43.0832, 25.6337, speed, starTime += 100));
+		locations.add(getMyLocation(43.0833, 25.6337, speed, starTime += 100));
+		locations.add(getMyLocation(43.0834, 25.6337, speed, starTime += 100));
+
+		locations.add(getMyLocation(43.0835, 25.6338, speed, starTime += 100));
+		locations.add(getMyLocation(43.0835, 25.6339, speed, starTime += 100));
+		locations.add(getMyLocation(43.0835, 25.6340, speed, starTime += 100));
+		locations.add(getMyLocation(43.0835, 25.6341, speed, starTime += 100));
+		locations.add(getMyLocation(43.0835, 25.6342, speed, starTime += 100));
+
+		locations.add(getMyLocation(43.0835, 25.6342, speed, starTime += 100));
+		locations.add(getMyLocation(43.0834, 25.6342, speed, starTime += 100));
+		locations.add(getMyLocation(43.0833, 25.6342, speed, starTime += 100));
+		locations.add(getMyLocation(43.0832, 25.6342, speed, starTime += 100));
+		locations.add(getMyLocation(43.0831, 25.6342, speed, starTime += 100));
+
+		locations.add(getMyLocation(43.0830, 25.6342, speed, starTime += 100));
+		locations.add(getMyLocation(43.0830, 25.6341, speed, starTime += 100));
+		locations.add(getMyLocation(43.0830, 25.6340, speed, starTime += 100));
+		locations.add(getMyLocation(43.0830, 25.6338, speed, starTime += 100));
+		locations.add(getMyLocation(43.0830, 25.6337, speed, starTime += 100));
+
+		((App) getApplication()).getModel().getLocationMaps().put(time, locations);
+
+		// second object
+//		time = "1406128593000";
+//		locations = new ArrayList<MyLocation>();
+//		for (int i = 0; i < 100; i++) {			
+//			locations.add(getMyLocation(43.0827 + (double) i / 1000, 25.6337, speed));
+//		}
+		
+//		((App) getApplication()).getModel().getLocationMaps().put(time, locations);
+
+		
+//		// invoke on location change
+//		for (int i = 0; i < 100; i++) {
+//			l = new Location("");
+//			l.setLatitude(43.0837 + (double) i / 1000);
+//			l.setLongitude(25.6337);
+//			onLocationChanged(l);
+//		}
 
 	}
 
@@ -254,8 +517,11 @@ public class MainActivity extends ActionBarActivity implements LocationListener 
 				try {
 					if (mMap == null)
 						return;
-					mMap.addMarker(new MarkerOptions().position(new LatLng(location.getLatitude(), location.getLongitude())).title(
-							"" + ((App) getApplication()).getModel().getLocations().size()));
+					mMap.addMarker(
+							getMarker(location.getLatitude(), location.getLongitude(), 
+									"" + ((App) getApplication()).getModel().getLocations().size()
+									+ " " + String.format("%.1f", location.getSpeed() * 3.6), 
+									markerType));
 				} catch (Exception e) {
 					e.printStackTrace();
 					Log.e(MainActivity.class.toString(), e.getMessage(), e);
@@ -380,16 +646,24 @@ public class MainActivity extends ActionBarActivity implements LocationListener 
 
 							// Iterator iterator = ((App) getApplication()).getModel().getLocations().iterator();
 							Iterator iterator = (Iterator) ((ArrayList) ((App) getApplication()).getModel().getLocationMaps().get(a.get(which))).iterator();
+							lastLoadedLocationsKeyIndex = which;
 							int points = ((ArrayList) ((App) getApplication()).getModel().getLocationMaps().get(a.get(which))).size();
 							Log.w(this.toString(), "loading: " + points + " points");
 							int i = 0;
 							for (; iterator.hasNext();) {
 								Location location = ((MyLocation) iterator.next()).getLocatoin();
-								mMap.addMarker(new MarkerOptions().position(new LatLng(location.getLatitude(), location.getLongitude())).title("" + i++));
+								mMap.addMarker(
+										// new MarkerOptions().position(new LatLng(location.getLatitude(), location.getLongitude())).title("" + i++)
+										getMarker(location.getLatitude(), location.getLongitude(), " " + i++ + " " + String.format("%.1f", location.getSpeed() * 3.6) ,
+												markerType)
+										);
 								Log.w(this.toString(), "loading location: " + i + " " + location.getLatitude());
 							}
+							
 							Toast.makeText(MainActivity.this, "Loaded " + i + " points", Toast.LENGTH_SHORT).show();
 							// mMap.addMarker(new MarkerOptions().position(new LatLng(43.0827, 25.6337)).title("Hello world"));
+							
+							
 						} catch (Exception e) {
 							e.printStackTrace();
 							Log.w(MainActivity.class.toString(), "\t" + e.getMessage());
@@ -457,5 +731,72 @@ public class MainActivity extends ActionBarActivity implements LocationListener 
 	public void remUp(View v) {
 		removeUpdates();
 	}
+	
+	@Override
+	public void onMapLongClick(LatLng point) {
+		Toast.makeText(this, "Clicked on " + point + " point!", Toast.LENGTH_SHORT).show();
+		MarkerOptions m = getMarker(point.latitude, point.longitude, "M" + marketCounter++, 0);
+		m.draggable(true);
+		mMap.setOnMarkerDragListener(new OnMarkerDragListener() {
+			
+			@Override
+			public void onMarkerDragStart(Marker marker) {
+			}
+			
+			@Override
+			public void onMarkerDragEnd(Marker marker) {
+			}
+			
+			@Override
+			public void onMarkerDrag(Marker marker) {
+			}
+		});
+		mMap.addMarker(m);
+		markers.add(m);
+	}
+	
+	private void calculateLaps() {
+		if (markers.get(0) == null) {
+			Toast.makeText(this, "Put start/stop marker at least!", Toast.LENGTH_SHORT).show();
+			return;
+		}
+		
+		// for i from all the point, check which is the near the M0 marker
+//		((App)getApplication()).getModel().getLocations().iterator()
+		Set<String> keys = ((App) getApplication()).getModel().getLocationMaps().keySet();
 
+		if (keys.isEmpty()) {
+			Toast.makeText(this, "List is empty", Toast.LENGTH_SHORT).show();
+			return;
+		}
+
+		final ArrayList<String> a = new ArrayList<String>();
+		final ArrayList<String> aDisplay = new ArrayList<String>();
+		// a.addAll(keys);
+		for (Iterator iterator = keys.iterator(); iterator.hasNext();) {
+			String string = (String) iterator.next();
+			a.add(string);
+			int pointsSize = ((ArrayList<MyLocation>) ((App) getApplication()).getModel().getLocationMaps().get(string)).size();
+			String date = new SimpleDateFormat("MM/dd HH:mm:ss").format(new Date(Long.parseLong(string)));
+			aDisplay.add(" " + date + " " + pointsSize);
+		}
+		
+		
+		Iterator iterator = (Iterator) ((ArrayList) ((App) getApplication()).getModel().getLocationMaps().get(a.get(lastLoadedLocationsKeyIndex))).iterator();
+		for (; iterator.hasNext();) {
+			MyLocation l = (MyLocation) iterator.next();
+			
+			// get distance
+			Log.w(this.toString(), "distance " + getDistance(markers.get(0), l));
+		}
+	}
+	
+	double getDistance (MarkerOptions m0, MyLocation point) {
+		double d = 0;
+		d = Math.sqrt(
+				Math.pow((point.getLatitude()- m0.getPosition().latitude), 2) +
+				Math.pow((point.getLongitude()- m0.getPosition().longitude), 2)
+				);
+		return d;
+	}
 }

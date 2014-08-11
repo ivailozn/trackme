@@ -202,7 +202,7 @@ public class App extends Application {
 	}
 
 	private File getObjFile() {
-		return new File(getFilesDir(), "last_state_01.txt");
+		return new File(getFilesDir(), "last_state_02.txt");
 	}
 
 }

@@ -1,0 +1,3 @@
+2014-08-08
+- added map type
+- added marker type
