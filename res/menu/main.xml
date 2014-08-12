@@ -3,11 +3,17 @@
     xmlns:tools="http://schemas.android.com/tools"
     tools:context="com.ivailozn.trackme.MainActivity" >
 
-    <item
-        android:id="@+id/action_settings"
+     <item
+        android:id="@+id/action_calculateLaps"
         android:orderInCategory="100"
-        android:title="@string/action_settings"
+        android:title="Calculate Laps"
         app:showAsAction="never"/>
+      
+<!--     <item -->
+<!--         android:id="@+id/action_settings" -->
+<!--         android:orderInCategory="100" -->
+<!--         android:title="@string/action_settings" -->
+<!--         app:showAsAction="never"/> -->
 
     <item
         android:id="@+id/action_dumpLocations"
@@ -22,11 +28,18 @@
         app:showAsAction="never"/>
     
     <item
-        android:id="@+id/action_clearPointsMarker"
+        android:id="@+id/action_clearPointMarkers"
+        android:orderInCategory="100"
+        android:title="Clear Points"
+        app:showAsAction="never"/>
+    
+    <!-- start/stop markers -->
+     <item
+        android:id="@+id/action_clearMarkers"
         android:orderInCategory="100"
         android:title="Clear Markers"
         app:showAsAction="never"/>
-    
+     
      <item
         android:id="@+id/action_fillDemoData"
         android:orderInCategory="100"
@@ -52,10 +65,6 @@
         app:showAsAction="never"/>
      
      
-     <item
-        android:id="@+id/action_calculateLaps"
-        android:orderInCategory="100"
-        android:title="Calculate Laps"
-        app:showAsAction="never"/>
+   
      
 </menu>

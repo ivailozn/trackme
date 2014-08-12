@@ -1,3 +1,9 @@
 2014-08-08
+- added calculate laps routine(including lap time and lap distance)
+- added laps navigator simple controls(< and >)
+- added Title to Save session
+-  
+
+2014-08-08
 - added map type
 - added marker type

@@ -4,7 +4,24 @@
     android:layout_height="match_parent"
     android:keepScreenOn="true"
     android:orientation="vertical" >
-
+    
+	<LinearLayout android:layout_width="match_parent"  android:layout_height="wrap_content"
+	    android:id="@+id/lapNavigatorPanel" android:visibility="gone"
+	    android:orientation="vertical">
+<!-- 	    <LinearLayout android:orientation="vertical" android:layout_width="match_parent" android:layout_height="wrap_content"> -->
+			    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal">
+					    <Button android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="0.3" android:text="L" android:onClick="back"/>
+					    <Button android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="0.3" android:text="J" android:onClick="forward"/>
+					    <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="0.25" android:text="" android:id="@+id/lapInfo" />
+					    <Button android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="0.15" android:text="x" android:onClick="hideLapsNavigator"/>
+		
+				</LinearLayout>
+			  <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal">
+					<TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="0.5" android:text="LapTime:" android:id="@+id/lapTime" />
+					<TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="0.5" android:text="LapDistance:" android:id="@+id/lapDistance" />
+			  </LinearLayout>
+<!-- 		</LinearLayout> -->
+	</LinearLayout>
     <TableLayout
         android:id="@+id/table"
         android:layout_width="match_parent"
@@ -123,21 +140,20 @@
         </TableRow>
     </TableLayout>
 
-    <LinearLayout
-        android:id="@+id/linearLayout1"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal" >
-
-        <TextView
-            android:id="@+id/elements"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginLeft="10dip"
-            android:layout_marginRight="5dip"
-            android:text="Entries " />
+<!--     <LinearLayout -->
+<!--         android:id="@+id/linearLayout1" -->
+<!--         android:layout_width="match_parent" -->
+<!--         android:layout_height="wrap_content" -->
+<!--         android:orientation="horizontal" > -->
+<!--         <TextView -->
+<!--             android:id="@+id/elements" -->
+<!--             android:layout_width="wrap_content" -->
+<!--             android:layout_height="wrap_content" -->
+<!--             android:layout_marginLeft="10dip" -->
+<!--             android:layout_marginRight="5dip" -->
+<!--             android:text="Entries " /> -->
      
-    </LinearLayout>
+<!--     </LinearLayout> -->
 
     <LinearLayout
         android:id="@+id/linearLayout2"

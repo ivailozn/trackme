@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.NoSuchElementException;
 import java.util.Set;
 
 import android.app.AlertDialog;
@@ -27,9 +28,13 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.google.android.gms.internal.fi;
+import com.google.android.gms.internal.lo;
+import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.GoogleMap.OnMapLongClickListener;
 import com.google.android.gms.maps.GoogleMap.OnMarkerDragListener;
@@ -38,6 +43,7 @@ import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
+
 
 public class MainActivity extends ActionBarActivity implements LocationListener, OnMapLongClickListener {
 
@@ -53,10 +59,14 @@ public class MainActivity extends ActionBarActivity implements LocationListener,
 	private static TextView accuracy;
 	private static TextView providerS;
 
-	private static TextView elements;
+	// private static TextView elements;
 
-	private GoogleMap mMap;
+	private GoogleMap mMap;	
 	private int markerType; 
+
+	
+	private Session session;
+	private int lapDisplayCounter = 0;
 	
 	
 	// market counter
@@ -71,7 +81,7 @@ public class MainActivity extends ActionBarActivity implements LocationListener,
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_main);
 
-		elements = (TextView) findViewById(R.id.elements);
+//		elements = (TextView) findViewById(R.id.elements);
 		latituteField = (TextView) findViewById(R.id.TextView02);
 		longitudeField = (TextView) findViewById(R.id.TextView04);
 		time = (TextView) findViewById(R.id.TextView05);
@@ -122,8 +132,8 @@ public class MainActivity extends ActionBarActivity implements LocationListener,
 
 		mMap.setMyLocationEnabled(true);
 
-		mMap.addMarker(new MarkerOptions().position(new LatLng(43.0827, 25.6337)).title("Hello world"));
-		mMap.addMarker(new MarkerOptions().position(new LatLng(10, 10)).title("Hello world"));
+//		mMap.addMarker(new MarkerOptions().position(new LatLng(43.0827, 25.6337)).title("Hello world"));
+//		mMap.addMarker(new MarkerOptions().position(new LatLng(10, 10)).title("Hello world"));
 
 		setMapType(PreferenceManager.getDefaultSharedPreferences(this).getInt(KEY_MAP_TYPE, 3));
 		setMarkerType(PreferenceManager.getDefaultSharedPreferences(this).getInt(KEY_MARKER_TYPE, 0));
@@ -131,6 +141,14 @@ public class MainActivity extends ActionBarActivity implements LocationListener,
 		mMap.setOnMapLongClickListener(this);
 	}
 
+	/**
+	 * 
+	 * @param lat
+	 * @param lng
+	 * @param title
+	 * @param markerType - 0 - default marker
+	 * @return
+	 */
 	public MarkerOptions getMarker(double lat, double lng, String title, int markerType) {
 		MarkerOptions mo = new MarkerOptions();
 		if(markerType == 0)
@@ -158,15 +176,24 @@ public class MainActivity extends ActionBarActivity implements LocationListener,
 		// automatically handle clicks on the Home/Up button, so long
 		// as you specify a parent activity in AndroidManifest.xml.
 		int id = item.getItemId();
-		if (id == R.id.action_settings) {
-			return true;
-		} else if (id == R.id.action_dumpLocations) {
+//		if (id == R.id.action_settings) {
+//			return true;
+//		} else
+			if (id == R.id.action_dumpLocations) {
 			dumpLocations();
 			return true;
 		} else if (id == R.id.action_clearLocations) {
 			((App) getApplication()).getModel().getLocationMaps().clear();
 			return true;
-		} else if (id == R.id.action_clearPointsMarker) {
+		} else if (id == R.id.action_clearPointMarkers) {
+			try {
+				mMap.clear();
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+			return true;
+		} else if (id == R.id.action_clearMarkers) {
+			markers.clear();
 			try {
 				mMap.clear();
 			} catch (Exception e) {
@@ -195,7 +222,28 @@ public class MainActivity extends ActionBarActivity implements LocationListener,
 			return true;
 		} else if (id == R.id.action_calculateLaps) {
 
-			calculateLaps();
+			// for i from all the point, check which is the near the M0 marker
+			Set<String> keys = ((App) getApplication()).getModel().getLocationMaps().keySet();
+	
+			if (keys.isEmpty()) {
+				Toast.makeText(this, "List is empty", Toast.LENGTH_SHORT).show();
+				//break;
+				return true;
+			}
+	
+			final ArrayList<String> a = new ArrayList<String>();
+//			final ArrayList<String> aDisplay = new ArrayList<String>();
+//			a.addAll(keys);
+			for (Iterator iterator = keys.iterator(); iterator.hasNext();) {
+				String string = (String) iterator.next();
+				a.add(string);
+//				int pointsSize = ((ArrayList<MyLocation>) ((App) getApplication()).getModel().getLocationMaps().get(string)).size();
+//				String date = new SimpleDateFormat("MM/dd HH:mm:ss").format(new Date(Long.parseLong(string)));
+//				aDisplay.add(" " + date + " " + pointsSize);
+			}
+					
+			ArrayList<MyLocation> locs = ((ArrayList) ((App) getApplication()).getModel().getLocationMaps().get(a.get(lastLoadedLocationsKeyIndex)));	
+			calculateLaps(locs);
 
 			return true;
 		}
@@ -477,7 +525,7 @@ public class MainActivity extends ActionBarActivity implements LocationListener,
 
 			int pointsSize = ((ArrayList) ((App) getApplication()).getModel().getLocationMaps().get(string)).size();
 
-			String date = new SimpleDateFormat("MM/dd HH:mm:ss").format(new Date(Long.parseLong(string)));
+			String date = getDate(string);
 			Log.w(MainActivity.class.toString(), "" + string + " " + date + " " + pointsSize);
 			Iterator it = (Iterator) ((App) getApplication()).getModel().getLocationMaps().get(string).iterator();
 			// int i = 0;
@@ -486,6 +534,23 @@ public class MainActivity extends ActionBarActivity implements LocationListener,
 			// Log.w(MainActivity.class.toString(), "   " + i++ + " " + location.getLatitude() + " " + location.getLongitude());
 			// }
 		}
+	}
+
+	/**
+	 * Normally the keys in our data storage are the datetime in long format, but we added a user description in the plain text
+	 * so the format it 
+	 * 			123412341234 UserTitle  with splace delimiter
+	 * @param key
+	 * @return
+	 */
+	public String getDate(String key) {
+		return key.indexOf(" ") == -1 
+				? new SimpleDateFormat("MM/dd HH:mm:ss").format(new Date(Long.parseLong(key))) 
+				: 
+//					 try {
+					new SimpleDateFormat("MM/dd HH:mm:ss").format(new Date(Long.parseLong( key.substring(0, key.indexOf(" ")) )))
+						+ key.substring(key.indexOf(" "));
+//		return new SimpleDateFormat("MM/dd HH:mm:ss").format(new Date(Long.parseLong(key)));
 	}
 
 	@Override
@@ -500,15 +565,15 @@ public class MainActivity extends ActionBarActivity implements LocationListener,
 
 		latituteField.setText(String.format("%.4f", location.getLatitude()));
 		longitudeField.setText(String.format("%.4f", location.getLongitude()));
-		time.setText(String.format("%s", new SimpleDateFormat("MM/dd HH:mm:ss.SSS").format(new Date(location.getTime()))));
+		time.setText(String.format("%s", new SimpleDateFormat("HH:mm:ss").format(new Date(location.getTime()))));
 		speed.setText(String.format("%.4f", location.getSpeed() * 3.6));// ms over ground ms*3.6 = kmh
 		accuracy.setText(String.format("%.4f", location.getAccuracy()));
 		providerS.setText(String.format("%s", location.getProvider()));
 
-		try {
-			elements.setText("Elements: " + ((App) getApplication()).getModel().getLocations().size() + location.getExtras().toString());
-		} catch (Exception e) {
-		}
+//		try {
+//			elements.setText("Elements: " + ((App) getApplication()).getModel().getLocations().size() + location.getExtras().toString());
+//		} catch (Exception e) {
+//		}
 
 		runOnUiThread(new Runnable() {
 
@@ -522,6 +587,7 @@ public class MainActivity extends ActionBarActivity implements LocationListener,
 									"" + ((App) getApplication()).getModel().getLocations().size()
 									+ " " + String.format("%.1f", location.getSpeed() * 3.6), 
 									markerType));
+					mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(location.getLatitude(), location.getLongitude()), mMap.getCameraPosition().zoom));
 				} catch (Exception e) {
 					e.printStackTrace();
 					Log.e(MainActivity.class.toString(), e.getMessage(), e);
@@ -548,17 +614,17 @@ public class MainActivity extends ActionBarActivity implements LocationListener,
 		super.onResume();
 		// requestUpdates();
 	}
-
-	public void requestUpdates() {
-		locationManager.requestLocationUpdates(provider, 200, 1, this);
-		findViewById(R.id.table).setBackgroundColor(Color.GREEN);
-	}
-
+	
 	/* Remove the locationlistener updates when Activity is paused */
 	@Override
 	protected void onPause() {
 		super.onPause();
 		// removeUpdates();
+	}
+
+	public void requestUpdates() {
+		locationManager.requestLocationUpdates(provider, 200, 1, this);
+		findViewById(R.id.table).setBackgroundColor(Color.GREEN);
 	}
 
 	public void removeUpdates() {
@@ -618,8 +684,17 @@ public class MainActivity extends ActionBarActivity implements LocationListener,
 			String string = (String) iterator.next();
 			a.add(string);
 			int pointsSize = ((ArrayList<MyLocation>) ((App) getApplication()).getModel().getLocationMaps().get(string)).size();
-			String date = new SimpleDateFormat("MM/dd HH:mm:ss").format(new Date(Long.parseLong(string)));
-			aDisplay.add(" " + date + " " + pointsSize);
+			
+			// format timeinLong_userTitle
+//			String date = string.indexOf(" ") == -1 
+//					? getDate(string) 
+//					: 
+////						 try {
+//						new SimpleDateFormat("MM/dd HH:mm:ss").format(new Date(Long.parseLong( string.substring(0, string.indexOf(" ")) )))
+////						} catch (Exception e) {return string;}
+////						finally { return string;}
+//					;
+			aDisplay.add("" + getDate(string) + "(" + pointsSize+")");
 		}
 
 		// display a list keys
@@ -652,6 +727,10 @@ public class MainActivity extends ActionBarActivity implements LocationListener,
 							int i = 0;
 							for (; iterator.hasNext();) {
 								Location location = ((MyLocation) iterator.next()).getLocatoin();
+								// center the map on the first point.
+								if(i == 0) {
+									mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(location.getLatitude(), location.getLongitude()), mMap.getCameraPosition().zoom));
+								}
 								mMap.addMarker(
 										// new MarkerOptions().position(new LatLng(location.getLatitude(), location.getLongitude())).title("" + i++)
 										getMarker(location.getLatitude(), location.getLongitude(), " " + i++ + " " + String.format("%.1f", location.getSpeed() * 3.6) ,
@@ -684,44 +763,72 @@ public class MainActivity extends ActionBarActivity implements LocationListener,
 			return;
 		}
 
-		String key = "" + System.currentTimeMillis();
-		int points = ((App) getApplication()).getModel().getLocations().size();
+		final int points = ((App) getApplication()).getModel().getLocations().size();
+		
+		// ask for a name
+		AlertDialog.Builder alert = new AlertDialog.Builder(this);
 
-		if (((App) getApplication()).getModel().getLocationMaps().containsKey(key)) {
-			Log.w(MainActivity.class.toString(), "storage contains" + key);
-		} else {
-			Log.w(MainActivity.class.toString(), "storage does not cintain" + key);
-		}
+		alert.setTitle(String.format("Save Session Title(%d)", points));
+		alert.setMessage("Enter name of the session");
 
-		HashMap<String, ArrayList<MyLocation>> h = ((App) getApplication()).getModel().getLocationMaps();
-		h.toString();
+		// Set an EditText view to get user input 
+		final EditText input = new EditText(this);
+		alert.setView(input);
 
-		Object o = ((App) getApplication()).getModel().getLocationMaps().put(key, ((App) getApplication()).getModel().getLocations());
-		if (o == null) {
-			Log.w(MainActivity.class.toString(), "new object put in the map");
-		} else {
-			Log.w(MainActivity.class.toString(), "object replaced");
-		}
+		alert.setPositiveButton("Ok", new DialogInterface.OnClickListener() {
+		public void onClick(DialogInterface dialog, int whichButton) {
+				String title = input.getText().toString();
+		  	
+				String key = "" + System.currentTimeMillis() + " " + title;
+				
+				// DEBUG
+				if (((App) getApplication()).getModel().getLocationMaps().containsKey(key)) {
+					Log.w(MainActivity.class.toString(), "storage contains" + key);
+				} else {
+					Log.w(MainActivity.class.toString(), "storage does not cintain" + key);
+				}
+	
+				HashMap<String, ArrayList<MyLocation>> h = ((App) getApplication()).getModel().getLocationMaps();
+				h.toString();
+	
+				Object o = ((App) getApplication()).getModel().getLocationMaps().put(key, ((App) getApplication()).getModel().getLocations());
+				if (o == null) {
+					Log.w(MainActivity.class.toString(), "new object put in the map");
+				} else {
+					Log.w(MainActivity.class.toString(), "object replaced");
+				}
+	
+				if (((ArrayList<MyLocation>) ((App) getApplication()).getModel().getLocationMaps().get(key)).size() != points) {
+					Toast.makeText(MainActivity.this, "Problem in writing points!", Toast.LENGTH_SHORT).show();
+				}
+	
+				// DEBUG
+				dumpLocations();
+	
+				// clear the view
+				try {
+					mMap.clear();
+				} catch (Exception e) {
+					e.printStackTrace();
+					Log.w(MainActivity.class.toString(), "\t" + e.getMessage());
+				}
+	
+				// clear the current arraylist with points object
+				// ((App) getApplication()).getModel().getLocations().clear();
+				((App) getApplication()).getModel().setLocations(new ArrayList<MyLocation>());
+	
+				Toast.makeText(MainActivity.this, "Saved " + points + " points!", Toast.LENGTH_SHORT).show();
+		  	
+		  }
+		});
 
-		if (((ArrayList<MyLocation>) ((App) getApplication()).getModel().getLocationMaps().get(key)).size() != points) {
-			Toast.makeText(this, "Problem in writing points!", Toast.LENGTH_SHORT).show();
-		}
+		alert.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+		  public void onClick(DialogInterface dialog, int whichButton) {
+		    // Canceled.
+		  }
+		});
 
-		dumpLocations();
-
-		// clear the view
-		try {
-			mMap.clear();
-		} catch (Exception e) {
-			e.printStackTrace();
-			Log.w(MainActivity.class.toString(), "\t" + e.getMessage());
-		}
-
-		// clear the current arraylist with points object
-		// ((App) getApplication()).getModel().getLocations().clear();
-		((App) getApplication()).getModel().setLocations(new ArrayList<MyLocation>());
-
-		Toast.makeText(this, "Saved " + points + " points!", Toast.LENGTH_SHORT).show();
+		alert.show();
 	}
 
 	public void reqUp(View v) {
@@ -755,39 +862,156 @@ public class MainActivity extends ActionBarActivity implements LocationListener,
 		markers.add(m);
 	}
 	
-	private void calculateLaps() {
-		if (markers.get(0) == null) {
+	private void calculateLaps(ArrayList<MyLocation> locs) {
+		if (markers.size() == 0 || markers.get(0) == null) {
 			Toast.makeText(this, "Put start/stop marker at least!", Toast.LENGTH_SHORT).show();
 			return;
 		}
 		
-		// for i from all the point, check which is the near the M0 marker
-//		((App)getApplication()).getModel().getLocations().iterator()
-		Set<String> keys = ((App) getApplication()).getModel().getLocationMaps().keySet();
-
-		if (keys.isEmpty()) {
-			Toast.makeText(this, "List is empty", Toast.LENGTH_SHORT).show();
-			return;
-		}
-
-		final ArrayList<String> a = new ArrayList<String>();
-		final ArrayList<String> aDisplay = new ArrayList<String>();
-		// a.addAll(keys);
-		for (Iterator iterator = keys.iterator(); iterator.hasNext();) {
-			String string = (String) iterator.next();
-			a.add(string);
-			int pointsSize = ((ArrayList<MyLocation>) ((App) getApplication()).getModel().getLocationMaps().get(string)).size();
-			String date = new SimpleDateFormat("MM/dd HH:mm:ss").format(new Date(Long.parseLong(string)));
-			aDisplay.add(" " + date + " " + pointsSize);
+//		Iterator<MyLocation> iterator = locs.iterator();
+//		for (; iterator.hasNext();) {
+//			MyLocation l = (MyLocation) iterator.next();
+//			
+//			// get distance
+//			Log.w(this.toString(), "distance " + getDistance(markers.get(0), l));
+//		}
+		Iterator iterator = (Iterator) (locs).iterator();
+		int i = 0;
+		int lapCounter = 0;
+		int curentPoint = 0;
+		
+		session = new Session("new session");
+		Lap lap = new Lap(""+ lapCounter);
+		session.getLaps().add(lap);
+		lapDisplayCounter = 0;
+		
+		// print all points for DEBUG purposes
+		for (Iterator it = locs.iterator(); it.hasNext();) {
+			MyLocation f = (MyLocation) it.next();
+			double d1 = getDistance(markers.get(0), f);
+			Log.w(this.toString(), "distance " + " point: " + i++ + " " + String.format("%f.2", d1));
 		}
 		
+		i = 0;
 		
-		Iterator iterator = (Iterator) ((ArrayList) ((App) getApplication()).getModel().getLocationMaps().get(a.get(lastLoadedLocationsKeyIndex))).iterator();
+		// first second and third points
+		MyLocation f = null, s = null, t = null; 
 		for (; iterator.hasNext();) {
-			MyLocation l = (MyLocation) iterator.next();
-			
+			try {
+				if (f == null && s == null && t == null) {
+					// init first 3 point
+					f = (MyLocation) iterator.next();
+					s = (MyLocation) iterator.next();
+					t = (MyLocation) iterator.next();
+
+				} else {
+					// then we move forward point by point
+					f = s;
+					s = t;
+					t = (MyLocation) iterator.next();
+				}
+			} catch (NoSuchElementException e) {
+				System.out.println("end of the points");
+			}
+
 			// get distance
-			Log.w(this.toString(), "distance " + getDistance(markers.get(0), l));
+			double d1 = getDistance(markers.get(0), f);
+			if (s == null || t == null)
+				return;
+			double d2 = getDistance(markers.get(0), s); // our main point.
+			double d3 = getDistance(markers.get(0), t);
+
+//			double min;
+			double m = measure(markers.get(0).getPosition().latitude, markers.get(0).getPosition().longitude, s.getLatitude(), s.getLongitude());
+			double START_STOP_DISTANCE = 10;
+			if (d1 > d2 && d2 < d3 && m <= START_STOP_DISTANCE) {
+//			if (d1 > d2 && d2 < d3) {
+				System.out.println("we have a lap point(start)" + String.format("d: %.6f %.6f %.6f ", d1, d2, d3));
+				lapCounter++;
+				curentPoint = 0;
+				lap = new Lap("" + lapCounter);
+				session.getLaps().add(lap);
+			}
+			lap.getPoints().add(s);			 
+			Log.w(this.toString(), "distance " + " lap: " + lapCounter + " curentPoint: " + curentPoint++ + " point: " + i++ + " " + String.format("d: %.6f %.6f %.6f ", d1, d2, d3));
+		}
+		
+		debugSession(session);
+		
+		// diplay laps
+		displayLaps();
+	}
+
+	public void displayLaps() {
+		if (mMap != null) {
+			mMap.clear();
+
+			
+			
+			runOnUiThread(new Runnable() {
+
+				@Override
+				public void run() {
+					
+					double lapDistance = 0;
+					double lapTime = 0;
+					MyLocation startingLocation = null;
+					
+					
+					findViewById(R.id.lapNavigatorPanel).setVisibility(View.VISIBLE);
+					
+					// display markers
+					try {
+						for(int p = 0; p < markers.size(); p++) {
+							mMap.addMarker(getMarker(markers.get(p).getPosition().latitude, markers.get(p).getPosition().longitude, "m" + p, 0));
+						}
+					} catch (Exception e) {
+						e.printStackTrace();
+						Log.e(MainActivity.class.toString(), e.getMessage(), e);
+					}
+					
+					try {
+						((TextView)findViewById(R.id.lapInfo)).setText("" + lapDisplayCounter + "/" + session.getLaps().size());
+						MyLocation location;
+						int size = session.getLaps().get(lapDisplayCounter).getPoints().size();
+						for (int k = 0; k < size; k++) {
+							location = session.getLaps().get(lapDisplayCounter).getPoints().get(k);
+							// center the map on the first point
+							if (k == 0) {
+								startingLocation = location;
+								mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(location.getLatitude(), location.getLongitude()),  mMap.getCameraPosition().zoom));
+							}
+							mMap.addMarker(getMarker(location.getLatitude(), location.getLongitude(), "" + k + " " + String.format("%.1f", location.getSpeed() * 3.6), markerType));
+							if((k+1) == size) {
+								lapDistance = measure(startingLocation.latitude, startingLocation.longitude, location.latitude, location.longitude);
+							}
+							
+							long millis = location.getTime() - startingLocation.getTime();
+							long second = (millis / 1000) % 60;
+							long minute = (millis / (1000 * 60)) % 60;
+							long hour = (millis / (1000 * 60 * 60)) % 24;							
+							String time = String.format("%02d:%02d:%02d:%d", hour, minute, second, millis);						
+							((TextView) findViewById(R.id.lapTime)).setText("LapTime: " + time);
+							((TextView) findViewById(R.id.lapDistance)).setText("LapDistance: " + lapDistance);
+						}
+						
+						
+					} catch (Exception e) {
+						e.printStackTrace();
+						Log.e(MainActivity.class.toString(), e.getMessage(), e);
+					}
+				}
+			});
+		}
+	}
+	
+	private void debugSession (Session session) {
+		Log.w(this.toString(), "DEBUG SESSION");
+		Log.w(this.toString(), "Name: " + session.getName());
+		Log.w(this.toString(), "LapsSize: " + session.getLaps().size());
+		for (Iterator iterator = session.getLaps().iterator(); iterator.hasNext();) {
+			Lap lap = (Lap) iterator.next();
+			Log.w(this.toString(), "Laps: " + lap.getName() + " size: " +  lap.getPoints().size());
 		}
 	}
 	
@@ -798,5 +1022,32 @@ public class MainActivity extends ActionBarActivity implements LocationListener,
 				Math.pow((point.getLongitude()- m0.getPosition().longitude), 2)
 				);
 		return d;
+	}
+	
+	public void back(View v) {
+		lapDisplayCounter --;
+		displayLaps();
+	}
+	
+	public void forward(View v) {
+		lapDisplayCounter++;
+		displayLaps();
+	}
+	
+	public void hideLapsNavigator(View v) {
+		findViewById(R.id.lapNavigatorPanel).setVisibility(View.GONE);
+	}
+	
+	// measure distance in meters from two points
+	double measure(double lat1, double  lon1, double  lat2, double  lon2){  // generally used geo measurement function
+		double  R = 6378.137; // Radius of earth in KM
+		double  dLat = (lat2 - lat1) * Math.PI / 180;
+		double  dLon = (lon2 - lon1) * Math.PI / 180;
+		double  a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+	    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+	    Math.sin(dLon/2) * Math.sin(dLon/2);
+		double  c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+		double  d = R * c;
+	    return d * 1000; // meters
 	}
 }
