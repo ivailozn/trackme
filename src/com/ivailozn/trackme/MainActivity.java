@@ -28,6 +28,7 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -91,12 +92,26 @@ public class MainActivity extends ActionBarActivity implements LocationListener,
 
 		// Get the location manager
 		locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
+
 		// Define the criteria how to select the locatioin provider -> use
-		// default
+		// default criteria and provider
+//		Criteria criteria = new Criteria();							    
+//		provider = locationManager.getBestProvider(criteria, false);
+//		Location location = locationManager.getLastKnownLocation(provider);
+		
+		// GPS provider - not tested yet on my live devices
+//		provider = LocationManager.GPS_PROVIDER; 
+//		Location location = locationManager.getLastKnownLocation(provider);
+		
+		// criteria with the best Accuracy possible.
 		Criteria criteria = new Criteria();
+		criteria.setAccuracy(Criteria.ACCURACY_FINE);
+		criteria.setCostAllowed(false);
+		criteria.setBearingAccuracy(Criteria.ACCURACY_HIGH);
+		
 		provider = locationManager.getBestProvider(criteria, false);
 		Location location = locationManager.getLastKnownLocation(provider);
-
+		
 		// Initialize the location fields
 		if (location != null) {
 			System.out.println("Provider " + provider + " has been selected.");
@@ -179,13 +194,11 @@ public class MainActivity extends ActionBarActivity implements LocationListener,
 //		if (id == R.id.action_settings) {
 //			return true;
 //		} else
-			if (id == R.id.action_dumpLocations) {
-			dumpLocations();
+		if (id == R.id.action_debug) {
+			showDebugMenu();
 			return true;
-		} else if (id == R.id.action_clearLocations) {
-			((App) getApplication()).getModel().getLocationMaps().clear();
-			return true;
-		} else if (id == R.id.action_clearPointMarkers) {
+		 	
+		}  else if (id == R.id.action_clearPointMarkers) {
 			try {
 				mMap.clear();
 			} catch (Exception e) {
@@ -200,17 +213,7 @@ public class MainActivity extends ActionBarActivity implements LocationListener,
 				e.printStackTrace();
 			}
 			return true;
-		} else if (id == R.id.action_fillDemoData) {
-
-			fillDemoData();
-
-			return true;
-		}  else if (id == R.id.action_fillDemoLapData) {
-
-			fillDemoLapData();
-
-			return true;
-		}  else if (id == R.id.action_mapType) {
+		} else if (id == R.id.action_mapType) {
 
 			setMapType();
 
@@ -251,6 +254,77 @@ public class MainActivity extends ActionBarActivity implements LocationListener,
 		return super.onOptionsItemSelected(item);
 	}
 
+	private void showDebugMenu() {
+		
+		ArrayList<String> types = new ArrayList<String>();
+		types.add("Dump Locations");
+		types.add("Clear Locations");
+		types.add("Fill Demo Data");
+		types.add("Fill Demo Lap Data");
+		AlertDialog.Builder builder = new AlertDialog.Builder(this);
+		builder.setTitle("Debug Menu").setItems(types.toArray(new String[types.size()]), new DialogInterface.OnClickListener() {
+			public void onClick(DialogInterface dialog, final int which) {
+
+				switch (which) {
+				case 0:
+					dumpLocations();
+					break;
+
+				case 1:
+					// clear locations
+					((App) getApplication()).getModel().getLocationMaps().clear();
+					break;
+					
+				case 2:
+					fillDemoData();
+					break;
+				case 3:
+					fillDemoLapData();
+					break;
+				case 4:
+					dumpLocations();
+					break;
+				default:
+					break;
+				}
+				// display it as overlays with point
+//				runOnUiThread(new Runnable() {
+//
+//					@Override
+//					public void run() {
+//						try {
+//							setMarkerType(which);
+//						} catch (Exception e) {
+//							e.printStackTrace();
+//							Log.w(MainActivity.class.toString(), "\t" + e.getMessage());
+//						}
+//					}				
+//				});
+			}
+		});
+		builder.create();
+		builder.show();
+		
+//		if (id == R.id.action_dumpLocations) {
+//			dumpLocations();
+//			return true;
+//			}
+//		 else if (id == R.id.action_clearLocations) {
+//				((App) getApplication()).getModel().getLocationMaps().clear();
+//				return true;
+//			}else if (id == R.id.action_fillDemoData) {
+//
+//				fillDemoData();
+//
+//				return true;
+//			}  else if (id == R.id.action_fillDemoLapData) {
+//
+//				fillDemoLapData();
+//
+//				return true;
+//			} 
+	}
+	
 	public void setMarkerType() {
 		// display a list keys
 		ArrayList<String> types = new ArrayList<String>();
@@ -621,15 +695,25 @@ public class MainActivity extends ActionBarActivity implements LocationListener,
 		super.onPause();
 		// removeUpdates();
 	}
-
-	public void requestUpdates() {
-		locationManager.requestLocationUpdates(provider, 200, 1, this);
+	
+	public void startStop(View v) {
+		if(getString(R.string.label_start).equals(((Button)findViewById(R.id.startStop)).getText())) {
+			requestUpdates();
+		} else {
+			removeUpdates();
+		}
+	}
+	
+	public void requestUpdates() {		
+		locationManager.requestLocationUpdates(provider, 100, 1, this);		
 		findViewById(R.id.table).setBackgroundColor(Color.GREEN);
+		((Button)findViewById(R.id.startStop)).setText(R.string.label_stop);
 	}
 
 	public void removeUpdates() {
 		locationManager.removeUpdates(this);
 		findViewById(R.id.table).setBackgroundColor(Color.LTGRAY);
+		((Button)findViewById(R.id.startStop)).setText(R.string.label_start);
 	}
 
 	/**
@@ -818,7 +902,6 @@ public class MainActivity extends ActionBarActivity implements LocationListener,
 				((App) getApplication()).getModel().setLocations(new ArrayList<MyLocation>());
 	
 				Toast.makeText(MainActivity.this, "Saved " + points + " points!", Toast.LENGTH_SHORT).show();
-		  	
 		  }
 		});
 

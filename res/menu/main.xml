@@ -15,23 +15,45 @@
 <!--         android:title="@string/action_settings" -->
 <!--         app:showAsAction="never"/> -->
 
-    <item
-        android:id="@+id/action_dumpLocations"
+	<item
+        android:id="@+id/action_debug"
         android:orderInCategory="100"
-        android:title="Dump Locations"
+        android:title="Debug Menu"
         app:showAsAction="never"/>
+
+<!-- DEBUG ITEMS -->
+<!--     <item -->
+<!--         android:id="@+id/action_dumpLocations" -->
+<!--         android:orderInCategory="100" -->
+<!--         android:title="Dump Locations" -->
+<!--         app:showAsAction="never"/> -->
     
-    <item
-        android:id="@+id/action_clearLocations"
-        android:orderInCategory="100"
-        android:title="Clear Locations Map"
-        app:showAsAction="never"/>
+<!--     <item -->
+<!--         android:id="@+id/action_clearLocations" -->
+<!--         android:orderInCategory="100" -->
+<!--         android:title="Clear Locations Map" -->
+<!--         app:showAsAction="never"/> -->
+    
+<!--      <item -->
+<!--         android:id="@+id/action_fillDemoData" -->
+<!--         android:orderInCategory="100" -->
+<!--         android:title="Fill Demo Data" -->
+<!--         app:showAsAction="never"/> -->
+     
+<!--       <item -->
+<!--         android:id="@+id/action_fillDemoLapData" -->
+<!--         android:orderInCategory="100" -->
+<!--         android:title="Fill Demo LapData" -->
+<!--         app:showAsAction="never"/> -->
+     
+      
     
     <item
         android:id="@+id/action_clearPointMarkers"
         android:orderInCategory="100"
         android:title="Clear Points"
         app:showAsAction="never"/>
+    
     
     <!-- start/stop markers -->
      <item
@@ -40,18 +62,7 @@
         android:title="Clear Markers"
         app:showAsAction="never"/>
      
-     <item
-        android:id="@+id/action_fillDemoData"
-        android:orderInCategory="100"
-        android:title="Fill Demo Data"
-        app:showAsAction="never"/>
-     
-      <item
-        android:id="@+id/action_fillDemoLapData"
-        android:orderInCategory="100"
-        android:title="Fill Demo LapData"
-        app:showAsAction="never"/>
-     
+    
      <item
         android:id="@+id/action_mapType"
         android:orderInCategory="100"
@@ -64,7 +75,5 @@
         android:title="Marker Type"
         app:showAsAction="never"/>
      
-     
-   
      
 </menu>

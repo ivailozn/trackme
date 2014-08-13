@@ -1,1 +1,3 @@
-add start/stop point to measure laps or calculate maps (also sectors)
+TODO - location update parameters ui 
+
+DONE - add start/stop point to measure laps or calculate maps (also sectors)

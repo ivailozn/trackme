@@ -10,8 +10,8 @@
 	    android:orientation="vertical">
 <!-- 	    <LinearLayout android:orientation="vertical" android:layout_width="match_parent" android:layout_height="wrap_content"> -->
 			    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal">
-					    <Button android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="0.3" android:text="L" android:onClick="back"/>
-					    <Button android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="0.3" android:text="J" android:onClick="forward"/>
+					    <Button android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="0.3" android:text="@string/less_than" android:onClick="back"/>
+					    <Button android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="0.3" android:text="@string/greater_than" android:onClick="forward"/>
 					    <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="0.25" android:text="" android:id="@+id/lapInfo" />
 					    <Button android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="0.15" android:text="x" android:onClick="hideLapsNavigator"/>
 		
@@ -162,8 +162,9 @@
         android:orientation="horizontal" >
         <Button android:layout_width="0dp" android:layout_height="wrap_content" android:text="Load" android:onClick="load" android:layout_weight="0.25" />
         <Button android:layout_width="0dp" android:layout_height="wrap_content" android:text="Save" android:onClick="save" android:layout_weight="0.25" />
-        <Button android:layout_width="0dp" android:layout_height="wrap_content" android:text="ReqUp" android:onClick="reqUp" android:layout_weight="0.25" />
-        <Button android:layout_width="0dp" android:layout_height="wrap_content" android:text="RemUp" android:onClick="remUp" android:layout_weight="0.25" />
+        <Button android:layout_width="0dp" android:id="@+id/startStop" android:layout_height="wrap_content" android:text="@string/label_start" android:onClick="startStop" android:layout_weight="0.5" />
+<!--         <Button android:layout_width="0dp" android:layout_height="wrap_content" android:text="ReqUp" android:onClick="reqUp" android:layout_weight="0.25" /> -->
+<!--         <Button android:layout_width="0dp" android:layout_height="wrap_content" android:text="RemUp" android:onClick="remUp" android:layout_weight="0.25" /> -->
     </LinearLayout>
 
     <!-- time -->

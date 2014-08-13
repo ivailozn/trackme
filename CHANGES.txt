@@ -1,8 +1,13 @@
-2014-08-08
-- added calculate laps routine(including lap time and lap distance)
+2014-08-13
+- changed default provider to LocationManager.GPS_PROVIDER or criteria with similar settings
+- reorganizations of the menu
+
+2014-08-12
 - added laps navigator simple controls(< and >)
 - added Title to Save session
--  
+
+2014-08-08
+- added calculate laps routine(including lap time and lap distance)
 
 2014-08-08
 - added map type
